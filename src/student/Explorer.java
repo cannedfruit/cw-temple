@@ -2,7 +2,9 @@ package student;
 
 import game.*;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class Explorer {
 
@@ -37,25 +39,42 @@ public class Explorer {
     public void explore(ExplorationState state) {
         //TODO : Explore the cavern and find the orb
 
-        PriorityQueue<Long> visited = new PriorityQueueImpl<>();
-        PriorityQueue<Long> unvisited = new PriorityQueueImpl<>();
-        PriorityQueue<Long> previous = new PriorityQueueImpl<>();
+        PriorityQueue<Long> known = new PriorityQueueImpl<>();
+        //PriorityQueue<Long> unvisited = new PriorityQueueImpl<>();
+        //List<Long> previous = new ArrayList<>();
 
+        long amountTravelled = 0;
+
+        System.out.println(state.getDistanceToTarget());
         while(state.getDistanceToTarget() != 0){
             try {
-                visited.add(state.getCurrentLocation(), state.getDistanceToTarget());
+                known.add(state.getCurrentLocation(), (state.getDistanceToTarget() + amountTravelled));
             }catch(IllegalArgumentException ex){
-                visited.updatePriority(state.getCurrentLocation(), state.getDistanceToTarget() + 10);
+                known.updatePriority(state.getCurrentLocation(), (5 + state.getDistanceToTarget() + amountTravelled + 5));
             }
+
             Collection<NodeStatus> neighbours = state.getNeighbours();
+
             for(NodeStatus n : neighbours){
+                System.out.println(n.getId() + " : " + n.getDistanceToTarget());
                 try {
-                    unvisited.add(n.getId(), n.getDistanceToTarget());
+                    known.add(n.getId(), (n.getDistanceToTarget() + amountTravelled));
                 }catch(IllegalArgumentException ex){
-                    //don't add to list
+
+                    known.updatePriority(n.getId(), n.getDistanceToTarget() + amountTravelled + 5);
                 }
             }
-            state.moveTo(unvisited.poll());
+            try {
+                long next = known.poll();
+                state.moveTo(next);
+                amountTravelled++;
+                //previous.add(next);
+            }catch(IllegalArgumentException ex){
+                NodeStatus n = neighbours.parallelStream().sorted(NodeStatus::compareTo).findFirst().get();
+                state.moveTo(n.getId());
+                amountTravelled++;
+
+            }
         }
     }
 
