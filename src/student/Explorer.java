@@ -41,7 +41,7 @@ public class Explorer {
 
         PriorityQueue<Long> known = new PriorityQueueImpl<>();
         //PriorityQueue<Long> unvisited = new PriorityQueueImpl<>();
-        //List<Long> previous = new ArrayList<>();
+        List<Long> previous = new ArrayList<>();
 
         long amountTravelled = 0;
 
@@ -68,7 +68,7 @@ public class Explorer {
                 long next = known.poll();
                 state.moveTo(next);
                 amountTravelled++;
-                //previous.add(next);
+                previous.add(next);
             }catch(IllegalArgumentException ex){
                 NodeStatus n = neighbours.parallelStream().sorted(NodeStatus::compareTo).findFirst().get();
                 state.moveTo(n.getId());
