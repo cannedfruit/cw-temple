@@ -1,7 +1,8 @@
 package student;
 
-import game.EscapeState;
-import game.ExplorationState;
+import game.*;
+
+import java.util.Collection;
 
 public class Explorer {
 
@@ -35,6 +36,27 @@ public class Explorer {
      */
     public void explore(ExplorationState state) {
         //TODO : Explore the cavern and find the orb
+
+        PriorityQueue<Long> visited = new PriorityQueueImpl<>();
+        PriorityQueue<Long> unvisited = new PriorityQueueImpl<>();
+        PriorityQueue<Long> previous = new PriorityQueueImpl<>();
+
+        while(state.getDistanceToTarget() != 0){
+            try {
+                visited.add(state.getCurrentLocation(), state.getDistanceToTarget());
+            }catch(IllegalArgumentException ex){
+                visited.updatePriority(state.getCurrentLocation(), state.getDistanceToTarget() + 10);
+            }
+            Collection<NodeStatus> neighbours = state.getNeighbours();
+            for(NodeStatus n : neighbours){
+                try {
+                    unvisited.add(n.getId(), n.getDistanceToTarget());
+                }catch(IllegalArgumentException ex){
+                    //don't add to list
+                }
+            }
+            state.moveTo(unvisited.poll());
+        }
     }
 
     /**
