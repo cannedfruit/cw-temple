@@ -56,18 +56,25 @@ public class Explorer {
                     known.updatePriority(n.getId(), n.getDistanceToTarget() + amountTravelled + 5);
                 }
             }
-            long next = known.poll();
-            System.out.println("best next: " + next);
-            if (next == state.getCurrentLocation()) {
-                next = known.poll();}
+            try {
+                long next = known.poll();
+                System.out.println("best next: " + next);
+                if (next == state.getCurrentLocation()) {
+                    System.out.println("last node: " + previous.peek());
+                    next = known.poll();}
                 try {
                     System.out.println("moving to: " + next);
                     state.moveTo(next);
                     amountTravelled++;
                     previous.add(state.getCurrentLocation());
                 } catch (IllegalArgumentException ex) {
-                    //do nothing
+                    //TODO
+                    System.out.println(ex.getMessage());
                 }
+            }catch(PriorityQueueException pqe){
+                //TODO
+                System.out.println(pqe.getMessage());
+            }
             }
         }
 
