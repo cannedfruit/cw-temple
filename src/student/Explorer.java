@@ -2,9 +2,7 @@ package student;
 
 import game.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class Explorer {
 
@@ -40,43 +38,38 @@ public class Explorer {
         //TODO : Explore the cavern and find the orb
 
         PriorityQueue<Long> known = new PriorityQueueImpl<>();
-        //PriorityQueue<Long> unvisited = new PriorityQueueImpl<>();
-        List<Long> previous = new ArrayList<>();
+        Stack<Long> previous = new Stack<>();
 
         long amountTravelled = 0;
 
-        System.out.println(state.getDistanceToTarget());
-        while(state.getDistanceToTarget() != 0){
-            try {
-                known.add(state.getCurrentLocation(), (state.getDistanceToTarget() + amountTravelled));
-            }catch(IllegalArgumentException ex){
-                known.updatePriority(state.getCurrentLocation(), (5 + state.getDistanceToTarget() + amountTravelled + 5));
-            }
+        System.out.println("start: " + state.getDistanceToTarget());
+        while (state.getDistanceToTarget() != 0) {
+            System.out.println("current: " + state.getCurrentLocation());
 
             Collection<NodeStatus> neighbours = state.getNeighbours();
 
-            for(NodeStatus n : neighbours){
-                System.out.println(n.getId() + " : " + n.getDistanceToTarget());
+            for (NodeStatus n : neighbours) {
+                System.out.println(n.getId() + " : " + n.getDistanceToTarget() + " travelled: " + amountTravelled);
                 try {
-                    known.add(n.getId(), (n.getDistanceToTarget() + amountTravelled));
-                }catch(IllegalArgumentException ex){
-
+                    if(!previous.contains(n.getId())) known.add(n.getId(), (n.getDistanceToTarget() + amountTravelled - 3));
+                } catch (IllegalArgumentException ex) {
                     known.updatePriority(n.getId(), n.getDistanceToTarget() + amountTravelled + 5);
                 }
             }
-            try {
-                long next = known.poll();
-                state.moveTo(next);
-                amountTravelled++;
-                previous.add(next);
-            }catch(IllegalArgumentException ex){
-                NodeStatus n = neighbours.parallelStream().sorted(NodeStatus::compareTo).findFirst().get();
-                state.moveTo(n.getId());
-                amountTravelled++;
-
+            long next = known.poll();
+            System.out.println("best next: " + next);
+            if (next == state.getCurrentLocation()) {
+                next = known.poll();}
+                try {
+                    System.out.println("moving to: " + next);
+                    state.moveTo(next);
+                    amountTravelled++;
+                    previous.add(state.getCurrentLocation());
+                } catch (IllegalArgumentException ex) {
+                    //do nothing
+                }
             }
         }
-    }
 
     /**
      * Escape from the cavern before the ceiling collapses, trying to collect as much
