@@ -2,6 +2,7 @@ package student;
 
 import game.*;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class Explorer {
@@ -39,44 +40,133 @@ public class Explorer {
 
         PriorityQueue<Long> known = new PriorityQueueImpl<>();
         Stack<Long> previous = new Stack<>();
-
-        long amountTravelled = 0;
-
-        System.out.println("start: " + state.getDistanceToTarget());
-        while (state.getDistanceToTarget() != 0) {
-            System.out.println("current: " + state.getCurrentLocation());
-
+//
+        int amountTravelled = 0;
+//
+//
+//        System.out.println("start: " + state.getDistanceToTarget());
+//        while (state.getDistanceToTarget() != 0) {
+//            System.out.println("current: " + state.getCurrentLocation());
+//
             Collection<NodeStatus> neighbours = state.getNeighbours();
+            System.out.println(neighbours.size());
+//
+//            previous.add(state.getCurrentLocation());
+//
+//            addNeighbours(neighbours, previous, known, amountTravelled);
+//
+//            Long next = getNext(known, previous);
+//            if(next == -1) break;
+//
+//            try {
+//                System.out.println("best next: " + next);
+//                if (next == state.getCurrentLocation()) {
+//                    System.out.println("last node: " + previous.peek());
+//                    next = known.poll();}
+//                try {
+//                    System.out.println("moving to: " + next);
+//                    state.moveTo(next);
+//                    amountTravelled++;
+//                } catch (IllegalArgumentException ex) {
+//                    //TODO
+//                    System.out.println(ex.getMessage());
+//                    final Long finalNext1 = next;
+//                    while(!state.getNeighbours().stream().anyMatch(n -> n.getId() == finalNext1)){
+//                        if(previous.peek() == state.getCurrentLocation()) previous.pop();
+//                        System.out.println(previous.peek());
+//                        state.moveTo(previous.pop());
+//                        amountTravelled--;
+//                    }
+//                    previous.add(state.getCurrentLocation());
+//                    addNeighbours(neighbours, previous, known, amountTravelled);
+//                    try {
+//                        state.moveTo(next);
+//                    }catch(IllegalArgumentException iae){
+//                        state.moveTo(state.getNeighbours().stream().findFirst().get().getId());
+//                    }
+//                }
+//            }catch(PriorityQueueException pqe){
+//                //TODO
+//                System.out.println(pqe.getMessage());
+//                final long finalNext = next;
+//                while(!state.getNeighbours().stream().anyMatch(n -> n.getId() == finalNext)){
+//                    state.moveTo(previous.pop());
+//                }
+//                state.moveTo(next);
+//            }
+//        }
 
-            for (NodeStatus n : neighbours) {
-                System.out.println(n.getId() + " : " + n.getDistanceToTarget() + " travelled: " + amountTravelled);
-                try {
-                    if(!previous.contains(n.getId())) known.add(n.getId(), (n.getDistanceToTarget() + amountTravelled - 3));
-                } catch (IllegalArgumentException ex) {
-                    known.updatePriority(n.getId(), n.getDistanceToTarget() + amountTravelled + 5);
+    }
+
+    class TreeNode{
+        private long id;
+        private int distance;
+        private TreeNode left;
+        private TreeNode mid;
+        private TreeNode right;
+        private boolean wasVisited;
+
+        public TreeNode(NodeStatus node){
+            this.id = node.getId();
+            this.distance = node.getDistanceToTarget();
+            left = null;
+            mid = null;
+            right = null;
+            wasVisited = false;
+        }
+
+        public void visit(Set<NodeStatus> neighbourNodes){
+            wasVisited = true;
+            NodeStatus[] neighbours = neighbourNodes.toArray(new NodeStatus[3]);
+
+            for(int i = 0; i < neighbours.length; i++){
+                if(left == null){
+                    left = new TreeNode(neighbours[i]);
+                }else if(mid == null){
+                    mid = new TreeNode(neighbours[i]);
+                }else{
+                    right = new TreeNode(neighbours[i]);
                 }
-            }
-            try {
-                long next = known.poll();
-                System.out.println("best next: " + next);
-                if (next == state.getCurrentLocation()) {
-                    System.out.println("last node: " + previous.peek());
-                    next = known.poll();}
-                try {
-                    System.out.println("moving to: " + next);
-                    state.moveTo(next);
-                    amountTravelled++;
-                    previous.add(state.getCurrentLocation());
-                } catch (IllegalArgumentException ex) {
-                    //TODO
-                    System.out.println(ex.getMessage());
-                }
-            }catch(PriorityQueueException pqe){
-                //TODO
-                System.out.println(pqe.getMessage());
-            }
             }
         }
+
+        public Node getNode(){
+            return node;
+        }
+
+        public TreeNode getLeft(){
+            return left;
+        }
+
+        public TreeNode getForward(){
+            return mid;
+        }
+
+        public TreeNode getRight(){
+            return right;
+        }
+
+
+    }
+
+    private long getNext(PriorityQueue<Long> known, Stack<Long> previous){
+        try{
+            return known.poll();
+        }catch(PriorityQueueException pqe){
+            return -1;
+        }
+    }
+
+    private void addNeighbours(Collection<NodeStatus> neighbours, Stack<Long> previous, PriorityQueue<Long> known, int amountTravelled){
+        for (NodeStatus n : neighbours) {
+            System.out.println(n.getId() + " : " + n.getDistanceToTarget() + " travelled: " + amountTravelled);
+            try {
+                if (!previous.contains(n.getId())) known.add(n.getId(), (n.getDistanceToTarget() + amountTravelled));
+            }catch(IllegalArgumentException iae){
+                //do nothing
+            }
+        }
+    }
 
     /**
      * Escape from the cavern before the ceiling collapses, trying to collect as much
