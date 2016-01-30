@@ -40,22 +40,21 @@ public class Explorer {
         //TODO : Explore the cavern and find the orb
         Set<Long> visited = new HashSet<>();
         boolean moved;
+        int stepsTaken = 0;
 
         //create parent for ternary search tree
         TreeNode current = new TreeNode(state.getCurrentLocation());
-        current.visit(state.getNeighbours());
+        current.visit(state.getNeighbours(), stepsTaken);
 
         //explore until at destination
         while(state.getDistanceToTarget() != 0){
             moved = false;
             visited.add(state.getCurrentLocation());
-            //if unexplored neighbours, move to them
             if(current.getNeighbours() != null && current.getNeighbours().size() != 0){
                 List<TreeNode> neighbours = current.getNeighbours();
-                //System.out.println("number of neighbours: " + neighbours.size());
                 for (TreeNode neighbour : neighbours) {
                     //System.out.println("neighbour: " + neighbour.getId() + " seen: " + neighbour.isNew());
-
+                    //if unexplored neighbours, move to one closest to destination
                     if (!neighbour.wasVisited) {
                         //System.out.println("moving to: " + neighbour.getId());
                         state.moveTo(neighbour.getId());
@@ -63,21 +62,26 @@ public class Explorer {
                         Collection<NodeStatus> nextNeighbours = state.getNeighbours().stream()
                                 .filter(a -> !visited.contains(a.getId()))
                                 .collect(Collectors.toSet());
-                        neighbour.visit(nextNeighbours);
+                        stepsTaken++;
+                        neighbour.visit(nextNeighbours, stepsTaken);
                         moved = true;
                         break;
                     }
                 }
+                //if all neighbours visited, move back
                 if(!moved){
                     //System.out.println("all neighbours visited! Moving to: " + current.getPrevious().getId());
                     current = current.getPrevious();
                     state.moveTo(current.getId());
+                    stepsTaken--;
                 }
             }else{
+                //if all neighbours visited, move back
                 //System.out.println("moving back");
                 current = current.getPrevious();
                 //System.out.println(current.getId());
                 state.moveTo(current.getId());
+                stepsTaken--;
             }
         }
         System.out.println("YAY!!!!!!!!!!!!!!!!!!!");
@@ -86,9 +90,9 @@ public class Explorer {
     class TreeNode{
         private TreeNode previous;
         private long id;
-        private int distance;
         private List<TreeNode> neighbours;
         private boolean wasVisited;
+        private int rating;
 
         public TreeNode(long id){
             this.id = id;
@@ -97,41 +101,34 @@ public class Explorer {
             neighbours = null;
         }
 
-        public TreeNode(NodeStatus node, TreeNode previous){
+        public TreeNode(NodeStatus node, TreeNode previous, int rating){
             this.previous = previous;
             this.id = node.getId();
-            this.distance = node.getDistanceToTarget();
+            this.rating = rating;
             wasVisited = false;
             neighbours = null;
         }
 
-        public void visit(Collection<NodeStatus> neighbourNodes){
+        public void visit(Collection<NodeStatus> neighbourNodes, int stepsTaken){
             wasVisited = true;
             neighbours = new ArrayList<>();
             NodeStatus[] statusArray;
-            if(previous != null) {
-                 statusArray = neighbourNodes
-                        .stream().filter((a) -> a.getId() != previous.getId())
-                        .sorted(NodeStatus::compareTo)
-                        .toArray(NodeStatus[]::new);
-            }else{
-                statusArray = neighbourNodes.stream().sorted(NodeStatus::compareTo)
-                        .toArray(NodeStatus[]::new);
-            }
 
-            for(int i = 0; i < statusArray.length; i++) {
-                if(statusArray[i] != null){
-                        neighbours.add(new TreeNode(statusArray[i], this));
+            statusArray = neighbourNodes
+                        .stream()
+                        .toArray(NodeStatus[]::new);
+
+            for (NodeStatus aStatusArray : statusArray) {
+                if (aStatusArray != null) {
+                    neighbours.add(new TreeNode(aStatusArray, this, (stepsTaken + aStatusArray.getDistanceToTarget())));
                 }
             }
+            //sort neighbours
+            neighbours.stream().sorted(TreeNode::compareTo).collect(Collectors.toList());
         }
 
         public long getId(){
             return id;
-        }
-
-        public int getDistance(){
-            return distance;
         }
 
         public TreeNode getPrevious(){
@@ -144,6 +141,10 @@ public class Explorer {
 
         public boolean isNew(){
             return wasVisited;
+        }
+
+        public int compareTo(TreeNode other){
+            return Integer.compare(rating, other.rating);
         }
     }
 
