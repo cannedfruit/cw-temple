@@ -37,134 +37,68 @@ public class Explorer {
      */
     public void explore(ExplorationState state) {
         //TODO : Explore the cavern and find the orb
+        long previous;
 
-        PriorityQueue<Long> known = new PriorityQueueImpl<>();
-        Stack<Long> previous = new Stack<>();
-//
-        int amountTravelled = 0;
-//
-//
-//        System.out.println("start: " + state.getDistanceToTarget());
-//        while (state.getDistanceToTarget() != 0) {
-//            System.out.println("current: " + state.getCurrentLocation());
-//
-            Collection<NodeStatus> neighbours = state.getNeighbours();
-            System.out.println(neighbours.size());
-//
-//            previous.add(state.getCurrentLocation());
-//
-//            addNeighbours(neighbours, previous, known, amountTravelled);
-//
-//            Long next = getNext(known, previous);
-//            if(next == -1) break;
-//
-//            try {
-//                System.out.println("best next: " + next);
-//                if (next == state.getCurrentLocation()) {
-//                    System.out.println("last node: " + previous.peek());
-//                    next = known.poll();}
-//                try {
-//                    System.out.println("moving to: " + next);
-//                    state.moveTo(next);
-//                    amountTravelled++;
-//                } catch (IllegalArgumentException ex) {
-//                    //TODO
-//                    System.out.println(ex.getMessage());
-//                    final Long finalNext1 = next;
-//                    while(!state.getNeighbours().stream().anyMatch(n -> n.getId() == finalNext1)){
-//                        if(previous.peek() == state.getCurrentLocation()) previous.pop();
-//                        System.out.println(previous.peek());
-//                        state.moveTo(previous.pop());
-//                        amountTravelled--;
-//                    }
-//                    previous.add(state.getCurrentLocation());
-//                    addNeighbours(neighbours, previous, known, amountTravelled);
-//                    try {
-//                        state.moveTo(next);
-//                    }catch(IllegalArgumentException iae){
-//                        state.moveTo(state.getNeighbours().stream().findFirst().get().getId());
-//                    }
-//                }
-//            }catch(PriorityQueueException pqe){
-//                //TODO
-//                System.out.println(pqe.getMessage());
-//                final long finalNext = next;
-//                while(!state.getNeighbours().stream().anyMatch(n -> n.getId() == finalNext)){
-//                    state.moveTo(previous.pop());
-//                }
-//                state.moveTo(next);
-//            }
-//        }
+        //create parent for ternary search tree
+        TreeNode current = new TreeNode(state.getCurrentLocation());
+        current.visit(state.getNeighbours());
+
+        //explore until at destination
+        while(state.getDistanceToTarget() != 0){
+
+        }
 
     }
 
     class TreeNode{
+        private long previous;
         private long id;
         private int distance;
-        private TreeNode left;
-        private TreeNode mid;
-        private TreeNode right;
+        private List<TreeNode> neighbours;
         private boolean wasVisited;
 
-        public TreeNode(NodeStatus node){
-            this.id = node.getId();
-            this.distance = node.getDistanceToTarget();
-            left = null;
-            mid = null;
-            right = null;
+        public TreeNode(long id){
+            this.id = id;
             wasVisited = false;
+            neighbours = null;
         }
 
-        public void visit(Set<NodeStatus> neighbourNodes){
-            wasVisited = true;
-            NodeStatus[] neighbours = neighbourNodes.toArray(new NodeStatus[3]);
+        public TreeNode(NodeStatus node){
+            this.previous = this.id;
+            this.id = node.getId();
+            this.distance = node.getDistanceToTarget();
+            wasVisited = false;
+            neighbours = null;
+        }
 
-            for(int i = 0; i < neighbours.length; i++){
-                if(left == null){
-                    left = new TreeNode(neighbours[i]);
-                }else if(mid == null){
-                    mid = new TreeNode(neighbours[i]);
-                }else{
-                    right = new TreeNode(neighbours[i]);
+        public void visit(Collection<NodeStatus> neighbourNodes){
+            wasVisited = true;
+            NodeStatus[] neighbourStatus = (NodeStatus[]) neighbourNodes
+                    .stream().filter((a) -> a.getId()!= previous)
+                    .sorted(NodeStatus::compareTo)
+                    .toArray();
+
+            for(int i = 0; i < neighbourNodes.size(); i++) {
+                if (!neighbourNodes.contains(previous)) {
+                    neighbours.add(new TreeNode(neighbourStatus[i]));
                 }
             }
         }
 
-        public Node getNode(){
-            return node;
+        public long getId(){
+            return id;
         }
 
-        public TreeNode getLeft(){
-            return left;
+        public int getDistance(){
+            return distance;
         }
 
-        public TreeNode getForward(){
-            return mid;
+        public List<TreeNode> getNeighbours(){
+            return neighbours;
         }
 
-        public TreeNode getRight(){
-            return right;
-        }
-
-
-    }
-
-    private long getNext(PriorityQueue<Long> known, Stack<Long> previous){
-        try{
-            return known.poll();
-        }catch(PriorityQueueException pqe){
-            return -1;
-        }
-    }
-
-    private void addNeighbours(Collection<NodeStatus> neighbours, Stack<Long> previous, PriorityQueue<Long> known, int amountTravelled){
-        for (NodeStatus n : neighbours) {
-            System.out.println(n.getId() + " : " + n.getDistanceToTarget() + " travelled: " + amountTravelled);
-            try {
-                if (!previous.contains(n.getId())) known.add(n.getId(), (n.getDistanceToTarget() + amountTravelled));
-            }catch(IllegalArgumentException iae){
-                //do nothing
-            }
+        public boolean isNew(){
+            return wasVisited;
         }
     }
 
