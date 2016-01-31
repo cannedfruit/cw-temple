@@ -144,7 +144,7 @@ public class Explorer {
 
             neighbours.addAll(neighbourNodes.stream().filter(n -> n != null).map(n -> new TreeNode(n, this, (n.getId() - exit.getId()))).collect(Collectors.toList()));
             //sort neighbours
-            if(state.getTimeRemaining() > (state.getVertices().size())){
+            if(state.getTimeRemaining() > (state.getVertices().size() + 200)){
                 neighbours = neighbours.stream().sorted(TreeNode::moveAwayFrom).collect(Collectors.toList());
             }else {
                 neighbours = neighbours.stream().sorted(TreeNode::compareTo).collect(Collectors.toList());
@@ -251,9 +251,13 @@ public class Explorer {
                 }
             }else{
                 //if all neighbours visited, move back
-                current = current.getPrevious();
-                System.out.println(current.getId());
-                state.moveTo(current.getNode());
+                if(current.getPrevious().getNode() != null) {
+                    current = current.getPrevious();
+                    System.out.println(current.getId() + "backing up to " + current.getNode().getId());
+                    state.moveTo(current.getNode());
+                }else{
+                    current.exploreAgain(state.getCurrentNode().getNeighbours(), state.getExit(), state);
+                }
             }
         }
     }
