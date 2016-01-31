@@ -201,7 +201,7 @@ public class Explorer {
         Node exit = state.getExit();
         System.out.println("current: " + node.getId());
         System.out.println("exit: " + state.getExit().getId());
-        state.getCurrentNode().getExits().stream().forEach(a -> System.out.println("Exit: " + a.getDest().getId()));
+        //state.getCurrentNode().getExits().stream().forEach(a -> System.out.println("Exit: " + a.getDest().getId()));
         state.getCurrentNode().getNeighbours().stream().forEach(a -> System.out.println("Neighbour: " + a.getId()));
 
         Set<Long> visited = new HashSet<>();
@@ -212,7 +212,7 @@ public class Explorer {
 
         while(!node.equals(state.getExit())) {
             node = state.getCurrentNode();
-            System.out.println(node.getId());
+            System.out.println("Im at: " + node.getId());
             if (node.getTile().getGold() != 0) {
                 state.pickUpGold();
                 System.out.println("GOLD");
@@ -220,22 +220,20 @@ public class Explorer {
             moved = false;
             visited.add(state.getCurrentNode().getId());
             if(current.getNeighbours() != null && current.getNeighbours().size() != 0){
-            List<TreeNode> neighbours = current.getNeighbours();
-            for (TreeNode neighbour : neighbours) {
-                System.out.println("neighbour: " + neighbour.getId() + " seen: " + neighbour.isNew());
+                List<TreeNode> neighbours = current.getNeighbours();
+                TreeNode neighbour = neighbours.stream().findFirst().get();
+                //System.out.println("neighbour: " + neighbour.getId() + " seen: " + neighbour.isNew());
                 //if unexplored neighbours, move to one closest to destination
-                //if (!neighbour.wasVisited) {
-                    System.out.println("moving to: " + neighbour.getId());
+                if (!neighbour.wasVisited) {
                     state.moveTo(neighbour.getNode());
                     current = neighbour;
+                    node = state.getCurrentNode();
                     Set<Node> nextNeighbours = node.getNeighbours().stream()
                             .filter(a -> !visited.contains(a.getId()))
                             .collect(Collectors.toSet());
                     current.exploreAgain(nextNeighbours, exit);
                     moved = true;
-                    break;
-                //}
-            }
+                }
             //if all neighbours visited, move back
             if(!moved){
                 System.out.println("all neighbours visited! Moving to: " + current.getPrevious().getId());
@@ -249,6 +247,7 @@ public class Explorer {
             System.out.println(current.getId());
             state.moveTo(current.getNode());
         }
+            System.out.println("reached end of loop");
         }
     }
 }
