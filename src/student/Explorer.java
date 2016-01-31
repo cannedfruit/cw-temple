@@ -145,7 +145,7 @@ public class Explorer {
             neighbours.addAll(neighbourNodes.stream().filter(n -> n != null).map(n -> new TreeNode(n, this, (n.getId() - exit.getId()))).collect(Collectors.toList()));
             //sort neighbours
             if(state.getTimeRemaining() > (state.getVertices().size() + 200)){
-                neighbours = neighbours.stream().sorted(TreeNode::moveAwayFrom).collect(Collectors.toList());
+                neighbours = neighbours.stream().sorted(TreeNode::hasGold).collect(Collectors.toList());
             }else {
                 neighbours = neighbours.stream().sorted(TreeNode::compareTo).collect(Collectors.toList());
             }
@@ -174,8 +174,8 @@ public class Explorer {
         public int compareTo(TreeNode other){
             return (int) Long.compare(rating, other.rating);
         }
-        public int moveAwayFrom(TreeNode other){
-            return (int) Long.compare(other.rating, rating);
+        public int hasGold(TreeNode other){
+            return Integer.compare(node.getTile().getGold(), other.node.getTile().getGold());
         }
     }
 
