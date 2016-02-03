@@ -142,7 +142,7 @@ public class Explorer {
             wasVisited = true;
             neighbours = new ArrayList<>();
 
-            neighbours.addAll(neighbourNodes.stream().filter(n -> n != null).map(n -> new TreeNode(n, this, (n.getId() - exit.getId()))).collect(Collectors.toList()));
+            neighbours.addAll(neighbourNodes.stream().filter(n -> n != null).map(n -> new TreeNode(n, this, (state.getCurrentNode().getEdge(n).length - n.getId() - exit.getId()))).collect(Collectors.toList()));
             //sort neighbours
 //            if(((state.getTimeRemaining() * 100)/state.getVertices().size()) > 300){
 //                System.out.println("going for gold " + state.getTimeRemaining()* 100/state.getVertices().size());
@@ -235,6 +235,7 @@ public class Explorer {
                 for (TreeNode neighbour : neighbours) {
                     //if unexplored neighbours, move to one closest to destination
                     if (!neighbour.wasVisited) {
+                        //System.out.println("time remaining: " + state.getTimeRemaining() + " distance: " + state.getCurrentNode().getEdge(neighbour.getNode()).length);
                         //System.out.println("moving to: " + neighbour.getId());
                         state.moveTo(neighbour.getNode());
                         current = neighbour;
@@ -249,30 +250,25 @@ public class Explorer {
                 }
                 if(!moved){
                     //if all neighbours visited, move back
-                    System.out.println("1");
                     backUp(state, current);
                     node = state.getCurrentNode();
                     Set<Node> nextNeighbours = node.getNeighbours().stream()
                             .filter(a -> !visited.contains(a.getId()))
                             .collect(Collectors.toSet());
                     current.exploreAgain(nextNeighbours, exit, state);
-                    moved = true;
                 }
             }else{
                 //if all neighbours visited, move back
-                System.out.println("2");
                 backUp(state, current);
-                moved = true;
             }
         }
-        System.out.println("reached end of loop");
     }
 
     private void backUp(EscapeState state, TreeNode current){
         //if all neighbours visited, move back
         final long previous = current.getPrevious().getId();
         if(current.getPrevious().getNode() != null && (state.getCurrentNode().getNeighbours().stream().filter(a -> a.getId() == previous).count() != 0)) {
-            System.out.println(current.getId() + " backing up to " + current.getPrevious().getNode().getId());
+            //System.out.println(current.getId() + " backing up to " + current.getPrevious().getNode().getId());
             current = current.getPrevious();
             state.moveTo(current.getNode());
             current.exploreAgain(state.getCurrentNode().getNeighbours(), state.getExit(), state);
