@@ -36,9 +36,6 @@ public class Explorer {
      *
      * @param state the information available at the current state
      */
-
-    private Set<Node> knownNodes = new HashSet<>();
-
     public void explore(ExplorationState state) {
         //TODO : Explore the cavern and find the orb
         Set<Long> visited = new HashSet<>();
@@ -57,7 +54,7 @@ public class Explorer {
                 for (TreeNode neighbour : neighbours) {
                     //System.out.println("neighbour: " + neighbour.getId() + " seen: " + neighbour.isNew());
                     //if unexplored neighbours, move to one closest to destination
-                    if (!neighbour.wasVisited) {
+                    if (!neighbour.wasVisited()) {
                         //System.out.println("moving to: " + neighbour.getId());
                         state.moveTo(neighbour.getId());
                         current = neighbour;
@@ -86,103 +83,6 @@ public class Explorer {
         System.out.println("YAY!!!!!!!!!!!!!!!!!!!");
     }
 
-    class TreeNode{
-        private TreeNode previous;
-        private long id;
-        private List<TreeNode> neighbours;
-        private boolean wasVisited;
-        private long rating;
-        private Node node;
-
-        public TreeNode(long id){
-            this.id = id;
-            this.previous = null;
-            wasVisited = false;
-            neighbours = null;
-        }
-
-        public TreeNode(NodeStatus node, TreeNode previous, int rating){
-            this.previous = previous;
-            this.id = node.getId();
-            this.rating = rating;
-            wasVisited = false;
-            neighbours = null;
-        }
-
-        public TreeNode(Node node, TreeNode previous, long rating){
-            this.previous = previous;
-            this.id = node.getId();
-            this.rating = rating;
-            wasVisited = false;
-            neighbours = null;
-            this.node = node;
-        }
-
-        public void visit(Collection<NodeStatus> neighbourNodes){
-            wasVisited = true;
-            neighbours = new ArrayList<>();
-            NodeStatus[] statusArray;
-
-            statusArray = neighbourNodes
-                        .stream()
-                        .toArray(NodeStatus[]::new);
-
-            for (NodeStatus aStatusArray : statusArray) {
-                if (aStatusArray != null) {
-                    neighbours.add(new TreeNode(aStatusArray, this, (aStatusArray.getDistanceToTarget())));
-//                    try{
-//                        knownNodes.add(aStatusArray.getId());
-//                    }catch(IllegalArgumentException ignore){}
-                }
-            }
-            //sort neighbours
-            neighbours = neighbours.stream().sorted(TreeNode::compareTo).collect(Collectors.toList());
-        }
-
-        public void exploreAgain(Set<Node> neighbourNodes, Node exit, EscapeState state){
-            wasVisited = true;
-            neighbours = new ArrayList<>();
-
-            neighbours.addAll(neighbourNodes.stream().filter(n -> n != null && !knownNodes.contains(n)).map(n -> new TreeNode(n, this, (state.getCurrentNode().getEdge(n).length + n.getId() - exit.getId()))).collect(Collectors.toList()));
-            neighbours.stream().forEach(n -> System.out.println(n.id + " : " + n.rating));
-            //sort neighbours
-//            if(((state.getTimeRemaining() * 100)/state.getVertices().size()) > 300){
-//                System.out.println("going for gold " + state.getTimeRemaining()* 100/state.getVertices().size());
-//                neighbours = neighbours.stream().sorted(TreeNode::hasGold).collect(Collectors.toList());
-//            }else {
-                //System.out.println("going for the exit " + state.getTimeRemaining()*100/state.getVertices().size());
-                neighbours = neighbours.stream().sorted(TreeNode::compareTo).collect(Collectors.toList());
-//            }
-        }
-
-        public long getId(){
-            return id;
-        }
-
-        public TreeNode getPrevious(){
-            return previous;
-        }
-
-        public List<TreeNode> getNeighbours(){
-            return neighbours;
-        }
-
-        public Node getNode() {
-            return node;
-        }
-
-        public boolean isNew(){
-            return wasVisited;
-        }
-
-        public int compareTo(TreeNode other){
-            return (int) Long.compare(rating, other.rating);
-        }
-
-        public int hasGold(TreeNode other){
-            return Integer.compare(node.getTile().getGold(), other.node.getTile().getGold());
-        }
-    }
 
     /**
      * Escape from the cavern before the ceiling collapses, trying to collect as much
