@@ -208,30 +208,43 @@ public class Explorer {
      * @param state the information available at the current state
      */
     private List<Node> reconstructPath(Map<Node, Node> path, Node current){
+        if(path.isEmpty()) System.out.println("empty path");
         List<Node> newPath = new ArrayList<>();
+        newPath.add(current);
         while(path.containsKey(current)){
-            current = path.get(current);
+            //System.out.println(current.getId() + " : " + path.get(current).getId());
+            Node temp = path.get(current);
+            path.remove(current, temp);
+            current = temp;
             newPath.add(current);
         }
         return newPath;
     }
+
     public void escape(EscapeState state) {
         //TODO: Escape from the cavern before time runs out
         Map<Node, Double> closed = new HashMap<>();
         PriorityQueue<Node> open = new PriorityQueueImpl<>();
         Map<Node, Node> path = new HashMap<>();
+        List<Node> newPath = null;
+
         Node current = state.getCurrentNode();
         open.add(current, 0);
-        List<Node> newPath = null;
+        System.out.println("start: " + state.getCurrentNode().getId());
+        state.getCurrentNode().getNeighbours().stream().forEach(n-> System.out.println(n.getId()));
+        System.out.println("exit: " + state.getExit().getId());
 
         while(open.size() > 0){
             double distance = 0;
             if(closed.containsKey(current)){
                 distance = closed.get(current);
             }
-
+            Node previous = current;
             current = open.poll();
-            if (state.getCurrentNode().equals(state.getExit())) {
+            //System.out.println(current.getId());
+            if (current.equals(state.getExit())) {
+                System.out.println("found the exit!");
+                path.put(current, previous);
                 newPath = reconstructPath(path, current);
                 break;
             }
@@ -243,20 +256,34 @@ public class Explorer {
                 double neighbourDistance = distance + current.getEdge(node).length;
                 if (!closed.containsKey(node)) {
                     try {
-                        open.add(node, neighbourDistance);
-                    }catch(IllegalArgumentException ignore){}
+                        open.add(node, neighbourDistance + (state.getExit().getId() - node.getId()));
+                    }catch(IllegalArgumentException ignore){
+                        //ignore this node
+                    }
                     closed.put(current, neighbourDistance);
-                }else if(neighbourDistance < distance){
                     path.put(node, current);
+                }else if(closed.get(node) > neighbourDistance){
+                    //System.out.println("found a better way " + node.getId() + " : " + current.getId());
+                    path.replace(node, current);
+                    closed.replace(node, neighbourDistance);
                 }
+
             }
         }
+        System.out.println("done while loop");
 
         if(newPath != null){
-            newPath.stream().forEach(n -> System.out.println(n.getId()));
+            if (newPath.isEmpty()){
+                System.out.println("failed to find path :(");
+            }else {
+                System.out.println(":)");
+                newPath.stream().forEach(n -> System.out.println(n.getId()));
+            }
         }else{
-            System.out.println("failed to find path :(");
+            System.out.println(":(");
         }
+
+
 
 //        Node node = state.getCurrentNode();
 //        Node exit = state.getExit();
