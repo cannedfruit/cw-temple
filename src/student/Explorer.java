@@ -210,6 +210,17 @@ public class Explorer {
 
     public void escape(EscapeState state) {
         //TODO: Escape from the cavern before time runs out
+        List<Node> path = mapBestPath(state);
+
+        if (path != null) {
+            Collections.reverse(path);
+            path.stream().filter(aNewPath -> aNewPath != null && !aNewPath.equals(state.getCurrentNode())).forEach(state::moveTo);
+        }else{
+            System.out.println("failed to find path :(");
+        }
+    }
+
+    private List<Node> mapBestPath(EscapeState state){
         Map<Node, Double> dist = new HashMap<>();
         PriorityQueue<Node> open = new PriorityQueueImpl<>();
         Set<Node> closed = new HashSet<>();
@@ -255,13 +266,7 @@ public class Explorer {
 
             }
         }
-
-        if (newPath != null) {
-            Collections.reverse(newPath);
-            newPath.stream().filter(aNewPath -> aNewPath != null && !aNewPath.equals(state.getCurrentNode())).forEach(state::moveTo);
-        }else{
-            System.out.println("failed to find path :(");
-        }
+        return newPath;
     }
     private List<Node> reconstructPath(Map<Node, Node> path, Node current){
         if(path.isEmpty()) System.out.println("empty path");
