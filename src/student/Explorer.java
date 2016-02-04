@@ -111,6 +111,7 @@ public class Explorer {
     public void escape(EscapeState state) {
         //TODO: Escape from the cavern before time runs out
         List<Node> path = mapBestPath(state);
+        //path.stream().forEach(n -> System.out.println(n.getId()));
 
         if (path != null) {
             Collections.reverse(path);
@@ -130,25 +131,30 @@ public class Explorer {
     private List<Node> mapBestPath(EscapeState state){
         Map<Node, Double> dist = new HashMap<>();
         PriorityQueue<Node> open = new PriorityQueueImpl<>();
-        Set<Node> closed = new HashSet<>();
         Map<Node, Node> prev = new HashMap<>();
         List<Node> newPath = null;
         Collection<Node> vertices = state.getVertices();
 
         vertices.stream().forEach(n -> prev.put(n, null));
         vertices.stream().forEach(n -> dist.put(n, Double.MAX_VALUE));
+        vertices.stream().forEach(n -> open.add(n, dist.get(n)));
+
         Node current = state.getCurrentNode();
-        open.add(current, 0);
-        //System.out.println("start: " + state.getCurrentNode().getId());
-        //state.getCurrentNode().getNeighbours().stream().forEach(n-> System.out.println("neighbour: " + n.getId()));
-        //System.out.println("exit: " + state.getExit().getId());
+        Node start = current;
+        dist.replace(current, 0.0);
+        prev.replace(current, null);
+        open.updatePriority(current, 0)
+        ;
+        System.out.println("start: " + state.getCurrentNode().getId());
+        state.getCurrentNode().getNeighbours().stream().forEach(n-> System.out.println("neighbour: " + n.getId()));
+        System.out.println("exit: " + state.getExit().getId());
 
         while(open.size() > 0){
             double distance = dist.get(current);
             current = open.poll();
             if (current.equals(state.getExit())) {
                 System.out.println("found the exit!");
-                newPath = reconstructPath(prev, current);
+                newPath = reconstructPath(prev, current, start);
                 break;
             }
             Set<Node> neighbours = new HashSet<>();
@@ -157,25 +163,20 @@ public class Explorer {
             }
             for (Node node : neighbours) {
                 double neighbourDistance = distance + current.getEdge(node).length;
-                if (!closed.contains(node)) {
+                if(dist.get(node) > neighbourDistance){
                     try {
-                        open.add(node, neighbourDistance + (state.getExit().getId() - node.getId()));
-
-                    }catch(IllegalArgumentException ignore){
-                        //ignore this node
-                    }
-                    closed.add(current);
-                    prev.put(node, current);
-                }else if(dist.get(node) > neighbourDistance){
-                    prev.replace(node, current);
-                    dist.replace(node, neighbourDistance);
+                        open.updatePriority(node, neighbourDistance);
+                        prev.replace(node, current);
+                        dist.replace(node, neighbourDistance);
+                    }catch(IllegalArgumentException ignore){}
                 }
 
             }
         }
         return newPath;
     }
-    private List<Node> reconstructPath(Map<Node, Node> path, Node current){
+
+    private List<Node> reconstructPath(Map<Node, Node> path, Node current, Node start){
         if(path.isEmpty()) System.out.println("empty path");
         List<Node> newPath = new ArrayList<>();
         newPath.add(current);
