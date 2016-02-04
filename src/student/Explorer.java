@@ -207,19 +207,6 @@ public class Explorer {
      *
      * @param state the information available at the current state
      */
-    private List<Node> reconstructPath(Map<Node, Node> path, Node current){
-        if(path.isEmpty()) System.out.println("empty path");
-        List<Node> newPath = new ArrayList<>();
-        newPath.add(current);
-        while(path.containsKey(current)){
-                current = path.get(current);
-            if(current != null) {
-                //System.out.println(current.getId() + " : " + path.get(current).getId());
-                newPath.add(current);
-            }
-        }
-        return newPath;
-    }
 
     public void escape(EscapeState state) {
         //TODO: Escape from the cavern before time runs out
@@ -234,15 +221,13 @@ public class Explorer {
         vertices.stream().forEach(n -> dist.put(n, Double.MAX_VALUE));
         Node current = state.getCurrentNode();
         open.add(current, 0);
-        System.out.println("start: " + state.getCurrentNode().getId());
-        state.getCurrentNode().getNeighbours().stream().forEach(n-> System.out.println("neighbour: " + n.getId()));
-        System.out.println("exit: " + state.getExit().getId());
+        //System.out.println("start: " + state.getCurrentNode().getId());
+        //state.getCurrentNode().getNeighbours().stream().forEach(n-> System.out.println("neighbour: " + n.getId()));
+        //System.out.println("exit: " + state.getExit().getId());
 
         while(open.size() > 0){
             double distance = dist.get(current);
-            Node previous = current;
             current = open.poll();
-            //System.out.println(current.getId());
             if (current.equals(state.getExit())) {
                 System.out.println("found the exit!");
                 newPath = reconstructPath(prev, current);
@@ -264,8 +249,6 @@ public class Explorer {
                     closed.add(current);
                     prev.put(node, current);
                 }else if(dist.get(node) > neighbourDistance){
-                    //System.out.println("found a better way " + node.getId() + " : " + current.getId());
-                    //Node oldNode = path.get(node);
                     prev.replace(node, current);
                     dist.replace(node, neighbourDistance);
                 }
@@ -275,91 +258,22 @@ public class Explorer {
 
         if (newPath != null) {
             Collections.reverse(newPath);
-            //newPath.remove(state.getCurrentNode());
-            System.out.println(newPath.get(0).getId());
-            for(int i = 0; i < newPath.size(); i++){
-                if(newPath.get(i) != null && !newPath.get(i).equals(state.getCurrentNode())) {
-                    System.out.println(newPath.get(i).getId());
-                    state.moveTo(newPath.get(i));
-                }
-            }
+            newPath.stream().filter(aNewPath -> aNewPath != null && !aNewPath.equals(state.getCurrentNode())).forEach(state::moveTo);
         }else{
             System.out.println("failed to find path :(");
         }
-
-
-
-
-
-
-//        Node node = state.getCurrentNode();
-//        Node exit = state.getExit();
-////        System.out.println("current: " + node.getId());
-////        System.out.println("exit: " + state.getExit().getId());
-////        state.getCurrentNode().getNeighbours().stream().forEach(a -> System.out.println("Neighbour: " + a.getId()));
-////        System.out.println("number of vertices: " + state.getVertices().size());
-//
-//        Set<Long> visited = new HashSet<>();
-//        boolean moved;
-//
-//        TreeNode current = new TreeNode(node.getId());
-//        current.exploreAgain(node.getNeighbours(), exit, state);
-//
-//        while(!node.equals(state.getExit())) {
-//            moved = false;
-//            visited.add(state.getCurrentNode().getId());
-//            node = state.getCurrentNode();
-//            //if there is gold on the tile, pick it up
-//            if (node.getTile().getGold() != 0) {
-//                state.pickUpGold();
-//                //System.out.println("GOLD");
-//            }
-//            if(current.getNeighbours() != null && current.getNeighbours().size() != 0){
-//                List<TreeNode> neighbours = current.getNeighbours();
-//
-//                //TreeNode neighbour = neighbours.stream().findFirst().get();
-//                for (TreeNode neighbour : neighbours) {
-//                    //if unexplored neighbours, move to one closest to destination
-//                    if (!neighbour.wasVisited) {
-//                        //System.out.println("time remaining: " + state.getTimeRemaining() + " distance: " + state.getCurrentNode().getEdge(neighbour.getNode()).length);
-//                        //System.out.println("moving to: " + neighbour.getId());
-//                        state.moveTo(neighbour.getNode());
-//                        current = neighbour;
-//                        node = state.getCurrentNode();
-//                        Set<Node> nextNeighbours = node.getNeighbours().stream()
-//                                .filter(a -> !visited.contains(a.getId()))
-//                                .collect(Collectors.toSet());
-//                        current.exploreAgain(nextNeighbours, exit, state);
-//                        moved = true;
-//                        break;
-//                    }
-//                }
-//                if(!moved){
-//                    //if all neighbours visited, move back
-//                    backUp(state, current);
-//                    node = state.getCurrentNode();
-//                    Set<Node> nextNeighbours = node.getNeighbours().stream()
-//                            .filter(a -> !visited.contains(a.getId()))
-//                            .collect(Collectors.toSet());
-//                    current.exploreAgain(nextNeighbours, exit, state);
-//                }
-//            }else{
-//                //if all neighbours visited, move back
-//                backUp(state, current);
-//            }
-//        }
     }
-
-    private void backUp(EscapeState state, TreeNode current){
-        //if all neighbours visited, move back
-        final long previous = current.getPrevious().getId();
-        if(current.getPrevious().getNode() != null && (state.getCurrentNode().getNeighbours().stream().filter(a -> a.getId() == previous).count() != 0)) {
-            //System.out.println(current.getId() + " backing up to " + current.getPrevious().getNode().getId());
-            current = current.getPrevious();
-            state.moveTo(current.getNode());
-            current.exploreAgain(state.getCurrentNode().getNeighbours(), state.getExit(), state);
-        }else{
-            current.exploreAgain(state.getCurrentNode().getNeighbours(), state.getExit(), state);
+    private List<Node> reconstructPath(Map<Node, Node> path, Node current){
+        if(path.isEmpty()) System.out.println("empty path");
+        List<Node> newPath = new ArrayList<>();
+        newPath.add(current);
+        while(path.containsKey(current)){
+            current = path.get(current);
+            if(current != null) {
+                //System.out.println(current.getId() + " : " + path.get(current).getId());
+                newPath.add(current);
+            }
         }
+        return newPath;
     }
 }
