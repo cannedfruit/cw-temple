@@ -212,40 +212,40 @@ public class Explorer {
         List<Node> newPath = new ArrayList<>();
         newPath.add(current);
         while(path.containsKey(current)){
-            //System.out.println(current.getId() + " : " + path.get(current).getId());
-            Node temp = path.get(current);
-            path.remove(current, temp);
-            current = temp;
-            newPath.add(current);
+                current = path.get(current);
+            if(current != null) {
+                //System.out.println(current.getId() + " : " + path.get(current).getId());
+                newPath.add(current);
+            }
         }
         return newPath;
     }
 
     public void escape(EscapeState state) {
         //TODO: Escape from the cavern before time runs out
-        Map<Node, Double> closed = new HashMap<>();
+        Map<Node, Double> dist = new HashMap<>();
         PriorityQueue<Node> open = new PriorityQueueImpl<>();
-        Map<Node, Node> path = new HashMap<>();
+        Set<Node> closed = new HashSet<>();
+        Map<Node, Node> prev = new HashMap<>();
         List<Node> newPath = null;
+        Collection<Node> vertices = state.getVertices();
 
+        vertices.stream().forEach(n -> prev.put(n, null));
+        vertices.stream().forEach(n -> dist.put(n, Double.MAX_VALUE));
         Node current = state.getCurrentNode();
         open.add(current, 0);
         System.out.println("start: " + state.getCurrentNode().getId());
-        state.getCurrentNode().getNeighbours().stream().forEach(n-> System.out.println(n.getId()));
+        state.getCurrentNode().getNeighbours().stream().forEach(n-> System.out.println("neighbour: " + n.getId()));
         System.out.println("exit: " + state.getExit().getId());
 
         while(open.size() > 0){
-            double distance = 0;
-            if(closed.containsKey(current)){
-                distance = closed.get(current);
-            }
+            double distance = dist.get(current);
             Node previous = current;
             current = open.poll();
             //System.out.println(current.getId());
             if (current.equals(state.getExit())) {
                 System.out.println("found the exit!");
-                path.put(current, previous);
-                newPath = reconstructPath(path, current);
+                newPath = reconstructPath(prev, current);
                 break;
             }
             Set<Node> neighbours = new HashSet<>();
@@ -254,34 +254,41 @@ public class Explorer {
             }
             for (Node node : neighbours) {
                 double neighbourDistance = distance + current.getEdge(node).length;
-                if (!closed.containsKey(node)) {
+                if (!closed.contains(node)) {
                     try {
                         open.add(node, neighbourDistance + (state.getExit().getId() - node.getId()));
+
                     }catch(IllegalArgumentException ignore){
                         //ignore this node
                     }
-                    closed.put(current, neighbourDistance);
-                    path.put(node, current);
-                }else if(closed.get(node) > neighbourDistance){
+                    closed.add(current);
+                    prev.put(node, current);
+                }else if(dist.get(node) > neighbourDistance){
                     //System.out.println("found a better way " + node.getId() + " : " + current.getId());
-                    path.replace(node, current);
-                    closed.replace(node, neighbourDistance);
+                    //Node oldNode = path.get(node);
+                    prev.replace(node, current);
+                    dist.replace(node, neighbourDistance);
                 }
 
             }
         }
-        System.out.println("done while loop");
 
-        if(newPath != null){
-            if (newPath.isEmpty()){
-                System.out.println("failed to find path :(");
-            }else {
-                System.out.println(":)");
-                newPath.stream().forEach(n -> System.out.println(n.getId()));
+        if (newPath != null) {
+            Collections.reverse(newPath);
+            //newPath.remove(state.getCurrentNode());
+            System.out.println(newPath.get(0).getId());
+            for(int i = 0; i < newPath.size(); i++){
+                if(newPath.get(i) != null && !newPath.get(i).equals(state.getCurrentNode())) {
+                    System.out.println(newPath.get(i).getId());
+                    state.moveTo(newPath.get(i));
+                }
             }
         }else{
-            System.out.println(":(");
+            System.out.println("failed to find path :(");
         }
+
+
+
 
 
 
