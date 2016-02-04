@@ -207,29 +207,56 @@ public class Explorer {
      *
      * @param state the information available at the current state
      */
+    private List<Node> reconstructPath(Map<Node, Node> path, Node current){
+        List<Node> newPath = new ArrayList<>();
+        while(path.containsKey(current)){
+            current = path.get(current);
+            newPath.add(current);
+        }
+        return newPath;
+    }
     public void escape(EscapeState state) {
         //TODO: Escape from the cavern before time runs out
         Map<Node, Double> closed = new HashMap<>();
         PriorityQueue<Node> open = new PriorityQueueImpl<>();
+        Map<Node, Node> path = new HashMap<>();
         Node current = state.getCurrentNode();
         open.add(current, 0);
+        List<Node> newPath = null;
 
-        while(open.size() != 0){
-            double distance = closed.get(current);
+        while(open.size() > 0){
+            double distance = 0;
+            if(closed.containsKey(current)){
+                distance = closed.get(current);
+            }
+
             current = open.poll();
-            if (state.getCurrentNode().equals(state.getExit())) return; //return path
+            if (state.getCurrentNode().equals(state.getExit())) {
+                newPath = reconstructPath(path, current);
+                break;
+            }
             Set<Node> neighbours = new HashSet<>();
             if (current.getNeighbours() != null && current.getNeighbours().size() != 0) {
                 neighbours = current.getNeighbours();
             }
             for (Node node : neighbours) {
+                double neighbourDistance = distance + current.getEdge(node).length;
                 if (!closed.containsKey(node)) {
-                    open.add(node, distance + current.getEdge(node).length);
-                    closed.put(current, distance + current.getEdge(node).length);
+                    try {
+                        open.add(node, neighbourDistance);
+                    }catch(IllegalArgumentException ignore){}
+                    closed.put(current, neighbourDistance);
+                }else if(neighbourDistance < distance){
+                    path.put(node, current);
                 }
             }
         }
 
+        if(newPath != null){
+            newPath.stream().forEach(n -> System.out.println(n.getId()));
+        }else{
+            System.out.println("failed to find path :(");
+        }
 
 //        Node node = state.getCurrentNode();
 //        Node exit = state.getExit();
