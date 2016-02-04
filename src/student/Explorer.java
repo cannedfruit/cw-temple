@@ -214,10 +214,17 @@ public class Explorer {
 
         if (path != null) {
             Collections.reverse(path);
-            path.stream().filter(aNewPath -> aNewPath != null && !aNewPath.equals(state.getCurrentNode())).forEach(state::moveTo);
+            path.stream().filter(aNewPath -> aNewPath != null && !aNewPath.equals(state.getCurrentNode())).forEach(node -> moveAndFindGold(state, node));
         }else{
             System.out.println("failed to find path :(");
         }
+    }
+
+    private void moveAndFindGold(EscapeState state, Node node){
+        if(state.getCurrentNode().getTile().getGold() > 0){
+            state.pickUpGold();
+        }
+        state.moveTo(node);
     }
 
     private List<Node> mapBestPath(EscapeState state){
