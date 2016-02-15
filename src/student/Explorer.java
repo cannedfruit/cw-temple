@@ -132,7 +132,7 @@ public class Explorer {
         Map<Node, Double> dist = new HashMap<>();
         PriorityQueue<Node> open = new PriorityQueueImpl<>();
         Map<Node, Node> prev = new HashMap<>();
-        List<Node> newPath = null;
+        PriorityQueue<List<Node>> possiblePaths = new PriorityQueueImpl<>();
         Collection<Node> vertices = state.getVertices();
 
         vertices.stream().forEach(n -> prev.put(n, null));
@@ -140,29 +140,33 @@ public class Explorer {
         vertices.stream().forEach(n -> open.add(n, dist.get(n)));
 
         Node current = state.getCurrentNode();
-        Node start = current;
         dist.replace(current, 0.0);
         prev.replace(current, null);
-        open.updatePriority(current, 0)
-        ;
-        System.out.println("start: " + state.getCurrentNode().getId());
-        state.getCurrentNode().getNeighbours().stream().forEach(n-> System.out.println("neighbour: " + n.getId()));
-        System.out.println("exit: " + state.getExit().getId());
+        open.updatePriority(current, 0);
+        //System.out.println("start: " + state.getCurrentNode().getId());
+        //state.getCurrentNode().getNeighbours().stream().forEach(n-> System.out.println("neighbour: " + n.getId()));
+        //System.out.println("exit: " + state.getExit().getId());
 
         while(open.size() > 0){
-            double distance = dist.get(current);
+            double distance = dist.get(current) - current.getTile().getGold();
             current = open.poll();
-            if (current.equals(state.getExit())) {
+            if (current.equals(state.getExit()) && distance <= state.getTimeRemaining()) {
                 System.out.println("found the exit!");
-                newPath = reconstructPath(prev, current, start);
+                possiblePaths.add(reconstructPath(prev, current), -distance);
+                //break;
+            }
+
+            if(possiblePaths.size() > 4){
                 break;
             }
+
             Set<Node> neighbours = new HashSet<>();
             if (current.getNeighbours() != null && current.getNeighbours().size() != 0) {
                 neighbours = current.getNeighbours();
             }
             for (Node node : neighbours) {
-                double neighbourDistance = distance + current.getEdge(node).length;
+
+                double neighbourDistance = distance + current.getEdge(node).length - node.getTile().getGold();
                 if(dist.get(node) > neighbourDistance){
                     try {
                         open.updatePriority(node, neighbourDistance);
@@ -173,10 +177,11 @@ public class Explorer {
 
             }
         }
-        return newPath;
+        System.out.println("number of paths: " + possiblePaths.size());
+        return possiblePaths.poll();
     }
 
-    private List<Node> reconstructPath(Map<Node, Node> path, Node current, Node start){
+    private List<Node> reconstructPath(Map<Node, Node> path, Node current){
         if(path.isEmpty()) System.out.println("empty path");
         List<Node> newPath = new ArrayList<>();
         newPath.add(current);
