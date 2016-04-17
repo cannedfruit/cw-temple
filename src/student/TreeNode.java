@@ -8,23 +8,24 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * Ternary tree node used during explore phase
  * Created by Sarah on 2/4/2016.
  */
-public class TreeNode {
+class TreeNode {
     private TreeNode previous;
     private long id;
     private List<TreeNode> neighbours;
     private boolean wasVisited;
     private long rating;
 
-    public TreeNode(long id){
+    TreeNode(long id){
         this.id = id;
         this.previous = null;
         wasVisited = false;
         neighbours = null;
     }
 
-    public TreeNode(NodeStatus node, TreeNode previous, int rating){
+    private TreeNode(NodeStatus node, TreeNode previous, int rating){
         this.previous = previous;
         this.id = node.getId();
         this.rating = rating;
@@ -32,7 +33,7 @@ public class TreeNode {
         neighbours = null;
     }
 
-    public void visit(Collection<NodeStatus> neighbourNodes){
+    void visit(Collection<NodeStatus> neighbourNodes){
         wasVisited = true;
         neighbours = new ArrayList<>();
         NodeStatus[] statusArray;
@@ -47,22 +48,22 @@ public class TreeNode {
             }
         }
         //sort neighbours
-        neighbours = neighbours.stream().sorted(TreeNode::compareTo).collect(Collectors.toList());
+        neighbours = neighbours.stream().sorted(TreeNode::compareRating).collect(Collectors.toList());
     }
 
-    public long getId(){
+    long getId(){
         return id;
     }
 
-    public boolean wasVisited(){
+    boolean wasVisited(){
         return wasVisited;
     }
 
-    public TreeNode getPrevious(){
+    TreeNode getPrevious(){
         return previous;
     }
 
-    public List<TreeNode> getNeighbours(){
+    List<TreeNode> getNeighbours(){
         return neighbours;
     }
 
@@ -70,7 +71,7 @@ public class TreeNode {
         return wasVisited;
     }
 
-    public int compareTo(TreeNode other){
+    private int compareRating(TreeNode other){
         return Long.compare(rating, other.rating);
     }
 }

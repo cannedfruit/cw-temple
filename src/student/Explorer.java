@@ -5,8 +5,11 @@ import game.*;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 
 public class Explorer {
+
+    private static final int GOLD_HEURISTIC = 5;
 
     /**
      * Explore the cavern, trying to find the
@@ -37,7 +40,6 @@ public class Explorer {
      * @param state the information available at the current state
      */
     public void explore(ExplorationState state) {
-        //TODO : Explore the cavern and find the orb
         Set<Long> visited = new HashSet<>();
         boolean moved;
 
@@ -52,10 +54,8 @@ public class Explorer {
             if(current.getNeighbours() != null && current.getNeighbours().size() != 0){
                 List<TreeNode> neighbours = current.getNeighbours();
                 for (TreeNode neighbour : neighbours) {
-                    //System.out.println("neighbour: " + neighbour.getId() + " seen: " + neighbour.isNew());
                     //if unexplored neighbours, move to one closest to destination
                     if (!neighbour.wasVisited()) {
-                        //System.out.println("moving to: " + neighbour.getId());
                         state.moveTo(neighbour.getId());
                         current = neighbour;
                         Collection<NodeStatus> nextNeighbours = state.getNeighbours().stream()
@@ -68,19 +68,15 @@ public class Explorer {
                 }
                 //if all neighbours visited, move back
                 if(!moved){
-                    //System.out.println("all neighbours visited! Moving to: " + current.getPrevious().getId());
                     current = current.getPrevious();
                     state.moveTo(current.getId());
                 }
             }else{
                 //if all neighbours visited, move back
-                //System.out.println("moving back");
                 current = current.getPrevious();
-                //System.out.println(current.getId());
                 state.moveTo(current.getId());
             }
         }
-        System.out.println("YAY!!!!!!!!!!!!!!!!!!!");
     }
 
 
@@ -109,9 +105,7 @@ public class Explorer {
      */
 
     public void escape(EscapeState state) {
-        //TODO: Escape from the cavern before time runs out
         List<Node> path = mapBestPath(state);
-        //path.stream().forEach(n -> System.out.println(n.getId()));
 
         if (path != null) {
             Collections.reverse(path);
@@ -121,6 +115,11 @@ public class Explorer {
         }
     }
 
+    /**
+     * If current node has gold, pick it up!
+     * @param state the current game state
+     * @param node the current node occupied by the explorer
+     */
     private void moveAndFindGold(EscapeState state, Node node){
         if(state.getCurrentNode().getTile().getGold() > 0){
             state.pickUpGold();
@@ -128,36 +127,34 @@ public class Explorer {
         state.moveTo(node);
     }
 
+    /**
+     * Maps the route to the exit using Dijkstra's algorithm
+     * @param state the current game state
+     * @return the path to the exit
+     */
     private List<Node> mapBestPath(EscapeState state){
         Map<Node, Double> dist = new HashMap<>();
         PriorityQueue<Node> open = new PriorityQueueImpl<>();
         Map<Node, Node> prev = new HashMap<>();
-        PriorityQueue<List<Node>> possiblePaths = new PriorityQueueImpl<>();
         Collection<Node> vertices = state.getVertices();
 
+        //add vertices to priority queue and maps
         vertices.stream().forEach(n -> prev.put(n, null));
         vertices.stream().forEach(n -> dist.put(n, Double.MAX_VALUE));
-        vertices.stream().forEach(n -> open.add(n, dist.get(n)));
+        vertices.stream().forEach(n -> open.add(n, Double.MAX_VALUE));
 
+        //initialise current node in map of distance and priority queue of open nodes
         Node current = state.getCurrentNode();
         dist.replace(current, 0.0);
-        prev.replace(current, null);
         open.updatePriority(current, 0);
-        //System.out.println("start: " + state.getCurrentNode().getId());
-        //state.getCurrentNode().getNeighbours().stream().forEach(n-> System.out.println("neighbour: " + n.getId()));
-        //System.out.println("exit: " + state.getExit().getId());
 
         while(open.size() > 0){
-            double distance = dist.get(current) - current.getTile().getGold();
+            double heuristicDistance = dist.get(current) - current.getTile().getGold();
+            double distance = dist.get(current);
             current = open.poll();
-            if (current.equals(state.getExit()) && distance <= state.getTimeRemaining()) {
-                System.out.println("found the exit!");
-                possiblePaths.add(reconstructPath(prev, current), -distance);
-                //break;
-            }
 
-            if(possiblePaths.size() > 4){
-                break;
+            if (current.equals(state.getExit()) && distance <= state.getTimeRemaining()) {
+                    return reconstructPath(prev, current);
             }
 
             Set<Node> neighbours = new HashSet<>();
@@ -165,22 +162,26 @@ public class Explorer {
                 neighbours = current.getNeighbours();
             }
             for (Node node : neighbours) {
-
-                double neighbourDistance = distance + current.getEdge(node).length - node.getTile().getGold();
-                if(dist.get(node) > neighbourDistance){
+                double trueDistance = distance + current.getEdge(node).length;
+                double neighbourHeuristic = heuristicDistance + current.getEdge(node).length - node.getTile().getGold() * GOLD_HEURISTIC;
+                if(dist.get(node) > neighbourHeuristic){
                     try {
-                        open.updatePriority(node, neighbourDistance);
+                        open.updatePriority(node, neighbourHeuristic);
                         prev.replace(node, current);
-                        dist.replace(node, neighbourDistance);
+                        dist.replace(node, trueDistance);
                     }catch(IllegalArgumentException ignore){}
                 }
-
             }
         }
-        System.out.println("number of paths: " + possiblePaths.size());
-        return possiblePaths.poll();
+        return null;
     }
 
+    /**
+     * Reverses the path from the exit to the explorer
+     * @param path the path from the exit to the explorer
+     * @param current node the explorer occupies
+     * @return The path the explorer must take to get to the exit
+     */
     private List<Node> reconstructPath(Map<Node, Node> path, Node current){
         if(path.isEmpty()) System.out.println("empty path");
         List<Node> newPath = new ArrayList<>();
@@ -188,7 +189,6 @@ public class Explorer {
         while(path.containsKey(current)){
             current = path.get(current);
             if(current != null) {
-                //System.out.println(current.getId() + " : " + path.get(current).getId());
                 newPath.add(current);
             }
         }
